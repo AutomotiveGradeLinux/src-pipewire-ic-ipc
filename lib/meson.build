@@ -1,0 +1,40 @@
+icipc_lib_sources = files(
+  'utils.c',
+  'protocol.c',
+  'receiver.c',
+  'sender.c',
+  'client.c',
+  'server.c',
+)
+
+icipc_lib_headers = files(
+  'protocol.h',
+  'receiver.h',
+  'sender.h',
+  'client.h',
+  'server.h',
+  'icipc.h',
+)
+
+
+
+install_headers(icipc_lib_headers,
+  install_dir : join_paths(get_option('includedir'), 'icipc-' + wireplumber_api_version, 'icipc')
+)
+
+icipc_lib = library('icipc-' + wireplumber_api_version,
+  icipc_lib_sources,
+  c_args : [
+    '-D_GNU_SOURCE',
+    '-DG_LOG_USE_STRUCTURED',
+    '-DG_LOG_DOMAIN="icipc"',
+  ],
+  install: true,
+  dependencies : [dependency('threads'), spa_dep],
+)
+
+icipc_dep = declare_dependency(
+  link_with: icipc_lib,
+  include_directories: wp_lib_include_dir,
+  dependencies: [spa_dep],
+)
