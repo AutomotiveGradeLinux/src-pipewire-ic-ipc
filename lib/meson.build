@@ -48,3 +48,7 @@ icipc_dep = declare_dependency(
   include_directories: wp_lib_include_dir,
   dependencies: [spa_dep],
 )
+
+pkgconfig.generate(icipc_lib,
+  subdirs: 'icipc-' + icipc_api_version
+)
