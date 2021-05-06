@@ -178,6 +178,7 @@ icipc_receiver_free (struct icipc_receiver *self)
   icipc_epoll_thread_destroy (&self->epoll_thread);
   free (self->buffer_read);
   close (self->socket_fd);
+  unlink (self->addr.sun_path);
   free (self);
 }
 
