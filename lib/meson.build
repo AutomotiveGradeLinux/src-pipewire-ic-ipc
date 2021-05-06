@@ -38,7 +38,7 @@ icipc_lib = library('icipc-' + icipc_api_version,
     '-DG_LOG_DOMAIN="icipc"',
   ],
   install: true,
-  dependencies : [dependency('threads'), spa_dep],
+  dependencies : [threads_dep, spa_dep],
   soversion: icipc_so_version,
   version: meson.project_version(),
 )
