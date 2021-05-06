@@ -1,3 +1,8 @@
+if get_option('icipc').disabled()
+  icipc_dep = disabler()
+  subdir_done()
+endif
+
 icipc_lib_sources = files(
   'utils.c',
   'protocol.c',
