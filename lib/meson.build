@@ -24,7 +24,7 @@ icipc_lib_headers = files(
 
 
 install_headers(icipc_lib_headers,
-  install_dir : join_paths(get_option('includedir'), 'icipc-' + wireplumber_api_version, 'icipc')
+  install_dir : get_option('includedir') / 'icipc-' + wireplumber_api_version / 'icipc'
 )
 
 icipc_lib = library('icipc-' + wireplumber_api_version,
