@@ -9,7 +9,7 @@
 #include <glib.h>
 #include <icipc/icipc.h>
 
-#define TEST_ADDRESS "/tmp/icipc-sender-receiver"
+#define TEST_ADDRESS "icipc-sender-receiver"
 
 struct event_data {
   const uint8_t * expected_data;

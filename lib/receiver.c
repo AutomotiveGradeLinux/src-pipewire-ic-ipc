@@ -107,13 +107,11 @@ icipc_receiver_new (const char *path,
                     size_t user_size)
 {
   struct icipc_receiver *self;
-  int name_size;
+  int res;
 
   /* check params */
   if (path == NULL || buffer_size == 0)
     return NULL;
-
-  unlink (path);
 
   self = calloc (1, sizeof (struct icipc_receiver) + user_size);
   if (self == NULL)
@@ -123,10 +121,11 @@ icipc_receiver_new (const char *path,
 
   /* set address */
   self->addr.sun_family = AF_LOCAL;
-  name_size = snprintf(self->addr.sun_path, sizeof(self->addr.sun_path), "%s",
-      path) + 1;
-  if (name_size > (int) sizeof(self->addr.sun_path))
+  res = icipc_construct_socket_path (path, self->addr.sun_path, sizeof(self->addr.sun_path));
+  if (res < 0)
     goto error;
+
+  unlink (self->addr.sun_path);
 
   /* create socket */
   self->socket_fd =

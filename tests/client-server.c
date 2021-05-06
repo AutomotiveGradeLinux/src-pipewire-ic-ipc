@@ -11,7 +11,7 @@
 #include <spa/pod/parser.h>
 #include <icipc/icipc.h>
 
-#define TEST_ADDRESS "/tmp/icipc-client-server"
+#define TEST_ADDRESS "icipc-client-server"
 
 static bool
 increment_request_handler (struct icipc_server *self, int client_fd,
