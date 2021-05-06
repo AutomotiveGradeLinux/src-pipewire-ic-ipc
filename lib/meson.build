@@ -21,13 +21,16 @@ icipc_lib_headers = files(
   'icipc.h',
 )
 
+icipc_api_version = '0.1'
+icipc_so_version = '0'
 
+icipc_headers_dir = get_option('includedir') / 'icipc-' + icipc_api_version / 'icipc'
 
 install_headers(icipc_lib_headers,
-  install_dir : get_option('includedir') / 'icipc-' + wireplumber_api_version / 'icipc'
+  install_dir : icipc_headers_dir
 )
 
-icipc_lib = library('icipc-' + wireplumber_api_version,
+icipc_lib = library('icipc-' + icipc_api_version,
   icipc_lib_sources,
   c_args : [
     '-D_GNU_SOURCE',
@@ -36,6 +39,8 @@ icipc_lib = library('icipc-' + wireplumber_api_version,
   ],
   install: true,
   dependencies : [dependency('threads'), spa_dep],
+  soversion: icipc_so_version,
+  version: meson.project_version(),
 )
 
 icipc_dep = declare_dependency(
