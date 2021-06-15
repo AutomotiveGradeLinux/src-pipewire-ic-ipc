@@ -121,8 +121,11 @@ icipc_server_new (const char *path, bool start)
   pthread_mutex_init (&priv->mutex, NULL);
   priv->n_request_handlers = 0;
 
-  if (start)
-    icipc_receiver_start (base);
+  if (start && !icipc_receiver_start (base)) {
+    icipc_log_error ("failed to start receiver");
+    icipc_server_free ((struct icipc_server *)base);
+    return NULL;
+  }
 
   return (struct icipc_server *)base;
 }
