@@ -168,10 +168,22 @@ test_icipc_sender_lost_connection ()
   icipc_receiver_free (r);
   wait_for_event (&data, 1);
 
+  /* make sure the connection was lost */
+  g_assert_false (icipc_sender_is_connected (s));
+
+  /* create a new receiver */
+  struct icipc_receiver *r2 = icipc_receiver_new (TEST_ADDRESS, 16, NULL, NULL, 0);
+  g_assert_nonnull (r2);
+
+  /* re-connect sender with new receiver */
+  g_assert_true (icipc_sender_connect (s));
+  g_assert_true (icipc_sender_is_connected (s));
+
   /* clean up */
   g_cond_clear (&data.cond);
   g_mutex_clear (&data.mutex);
   icipc_sender_free (s);
+  icipc_receiver_free (r2);
 }
 
 static void
