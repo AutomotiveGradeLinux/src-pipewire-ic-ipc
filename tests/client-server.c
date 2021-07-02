@@ -10,8 +10,7 @@
 #include <spa/pod/builder.h>
 #include <spa/pod/parser.h>
 #include <icipc/icipc.h>
-
-#define TEST_ADDRESS "icipc-client-server"
+#include <unistd.h>
 
 static bool
 increment_request_handler (struct icipc_server *self, int client_fd,
@@ -70,9 +69,11 @@ reply_handler (struct icipc_sender *self, const uint8_t *buffer, size_t size, vo
 static void
 test_icipc_server_client ()
 {
-  struct icipc_server *s = icipc_server_new (TEST_ADDRESS, true);
+  g_autofree gchar *address = g_strdup_printf ("%s/icipc-test-%d-%d",
+          g_get_tmp_dir(), getpid(), g_random_int ());
+  struct icipc_server *s = icipc_server_new (address, true);
   g_assert_nonnull (s);
-  struct icipc_client *c = icipc_client_new (TEST_ADDRESS, true);
+  struct icipc_client *c = icipc_client_new (address, true);
   g_assert_nonnull (c);
   struct reply_data data;
   g_mutex_init (&data.mutex);
