@@ -9,7 +9,7 @@
 #include <glib.h>
 #include <spa/pod/builder.h>
 #include <spa/pod/parser.h>
-#include <icipc/icipc.h>
+#include <icipc.h>
 
 static void
 test_icipc_protocol ()

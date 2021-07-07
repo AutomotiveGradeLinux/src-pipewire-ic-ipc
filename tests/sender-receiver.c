@@ -7,7 +7,7 @@
  */
 
 #include <glib.h>
-#include <icipc/icipc.h>
+#include <icipc.h>
 #include <unistd.h>
 
 struct event_data {

@@ -1,8 +1,3 @@
-if get_option('icipc').disabled()
-  icipc_dep = disabler()
-  subdir_done()
-endif
-
 icipc_lib_sources = files(
   'utils.c',
   'protocol.c',
@@ -45,7 +40,7 @@ icipc_lib = library('icipc-' + icipc_api_version,
 
 icipc_dep = declare_dependency(
   link_with: icipc_lib,
-  include_directories: wp_lib_include_dir,
+  include_directories: include_directories('.'),
   dependencies: [spa_dep],
 )
 

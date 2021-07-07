@@ -10,7 +10,7 @@
 #include <assert.h>
 
 #include <spa/pod/builder.h>
-#include <icipc/icipc.h>
+#include <icipc.h>
 
 struct client_data {
   struct icipc_client *c;
