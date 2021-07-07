@@ -1,7 +1,7 @@
-common_deps = [icipc_dep, glib_dep]
+common_deps = [icipc_dep, threads_dep]
 common_env = environment({
-  'G_TEST_SRCDIR': meson.current_source_dir(),
-  'G_TEST_BUILDDIR': meson.current_build_dir(),
+  'XDG_RUNTIME_DIR': '/tmp',
+  'ICIPC_DEBUG': '3',
 })
 
 test(

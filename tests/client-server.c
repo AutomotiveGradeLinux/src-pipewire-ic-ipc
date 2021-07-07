@@ -6,19 +6,29 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <glib.h>
+#define _GNU_SOURCE
+#include "test.h"
 #include <spa/pod/builder.h>
 #include <spa/pod/parser.h>
 #include <icipc.h>
 #include <unistd.h>
+#include <pthread.h>
+
+static inline char *new_address()
+{
+  char *address = NULL;
+  (void) asprintf(&address, "icipc-test-%d-%d", getpid(), rand());
+  test_ptr_notnull(address);
+  return address;
+}
 
 static bool
 increment_request_handler (struct icipc_server *self, int client_fd,
     const char *name, const struct spa_pod *args, void *data)
 {
   int32_t val = 0;
-  g_assert_true (spa_pod_is_int (args));
-  g_assert_true (spa_pod_get_int (args, &val) == 0);
+  test_bool_true (spa_pod_is_int (args));
+  test_bool_true (spa_pod_get_int (args, &val) == 0);
   struct spa_pod_int res = SPA_POD_INIT_Int (val + 1);
   return icipc_server_reply_ok (self, client_fd, (struct spa_pod *)&res);
 }
@@ -34,92 +44,89 @@ struct reply_data {
   int32_t incremented;
   const char *error;
   int n_replies;
-  GMutex mutex;
-  GCond cond;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
 };
 
 static void
 wait_for_reply (struct reply_data *data, int n_replies)
 {
-  g_mutex_lock (&data->mutex);
+  pthread_mutex_lock (&data->mutex);
   while (data->n_replies < n_replies)
-    g_cond_wait (&data->cond, &data->mutex);
-  g_mutex_unlock (&data->mutex);
+    pthread_cond_wait (&data->cond, &data->mutex);
+  pthread_mutex_unlock (&data->mutex);
 }
 
 static void
 reply_handler (struct icipc_sender *self, const uint8_t *buffer, size_t size, void *p)
 {
   struct reply_data *data = p;
-  g_assert_nonnull (data);
+  test_ptr_notnull(data);
 
-  g_mutex_lock (&data->mutex);
+  pthread_mutex_lock (&data->mutex);
 
   const struct spa_pod *pod = icipc_client_send_request_finish (self, buffer, size, &data->error);
   if (pod) {
-    g_assert_true (spa_pod_is_int (pod));
-    g_assert_true (spa_pod_get_int (pod, &data->incremented) == 0);
+    test_bool_true (spa_pod_is_int (pod));
+    test_bool_true (spa_pod_get_int (pod, &data->incremented) == 0);
   }
   data->n_replies++;
-  g_cond_signal (&data->cond);
+  pthread_cond_signal (&data->cond);
 
-  g_mutex_unlock (&data->mutex);
+  pthread_mutex_unlock (&data->mutex);
 }
 
 static void
 test_icipc_server_client ()
 {
-  g_autofree gchar *address = g_strdup_printf ("%s/icipc-test-%d-%d",
-          g_get_tmp_dir(), getpid(), g_random_int ());
+  char *address = new_address();
   struct icipc_server *s = icipc_server_new (address, true);
-  g_assert_nonnull (s);
+  test_ptr_notnull(s);
   struct icipc_client *c = icipc_client_new (address, true);
-  g_assert_nonnull (c);
+  test_ptr_notnull(c);
   struct reply_data data;
-  g_mutex_init (&data.mutex);
-  g_cond_init (&data.cond);
+  pthread_mutex_init (&data.mutex, NULL);
+  pthread_cond_init (&data.cond, NULL);
 
   /* add request handlers */
-  g_assert_true (icipc_server_set_request_handler (s, "INCREMENT", increment_request_handler, NULL));
-  g_assert_true (icipc_server_set_request_handler (s, "ERROR", error_request_handler, NULL));
+  test_bool_true (icipc_server_set_request_handler (s, "INCREMENT", increment_request_handler, NULL));
+  test_bool_true (icipc_server_set_request_handler (s, "ERROR", error_request_handler, NULL));
 
   /* send an INCREMENT request of 3, and make sure the returned value is 4 */
   data.incremented = -1;
   data.error = NULL;
   data.n_replies = 0;
   struct spa_pod_int i = SPA_POD_INIT_Int (3);
-  g_assert_true (icipc_client_send_request (c, "INCREMENT", (struct spa_pod *)&i, reply_handler, &data));
+  test_bool_true (icipc_client_send_request (c, "INCREMENT", (struct spa_pod *)&i, reply_handler, &data));
   wait_for_reply (&data, 1);
-  g_assert_null (data.error);
-  g_assert_cmpint (data.incremented, ==, 4);
+  test_ptr_null(data.error);
+  test_cmpint(data.incremented, ==, 4);
 
   /* send an ERROR request, and make sure the returned value is an error */
   data.error = NULL;
   data.n_replies = 0;
-  g_assert_true (icipc_client_send_request (c, "ERROR", NULL, reply_handler, &data));
+  test_bool_true (icipc_client_send_request (c, "ERROR", NULL, reply_handler, &data));
   wait_for_reply (&data, 1);
-  g_assert_cmpstr (data.error, ==, "error message");
+  test_str_eq(data.error, "error message");
 
   /* send an unhandled request, and make sure the server replies with an error */
   data.error = NULL;
   data.n_replies = 0;
-  g_assert_true (icipc_client_send_request (c, "UNHANDLED-REQUEST", NULL, reply_handler, &data));
+  test_bool_true (icipc_client_send_request (c, "UNHANDLED-REQUEST", NULL, reply_handler, &data));
   wait_for_reply (&data, 1);
-  g_assert_cmpstr (data.error, ==, "request handler not found");
+  test_str_eq(data.error, "request handler not found");
 
   /* clean up */
-  g_cond_clear (&data.cond);
-  g_mutex_clear (&data.mutex);
+  pthread_cond_destroy (&data.cond);
+  pthread_mutex_destroy (&data.mutex);
   icipc_client_free (c);
   icipc_server_free (s);
+  free(address);
 }
 
-gint
-main (gint argc, gchar *argv[])
+int
+main (int argc, char *argv[])
 {
-  g_test_init (&argc, &argv, NULL);
-
-  g_test_add_func ("/icipc/icipc-server-client", test_icipc_server_client);
-
-  return g_test_run ();
+  test_icipc_server_client();
+  return TEST_PASS;
 }
