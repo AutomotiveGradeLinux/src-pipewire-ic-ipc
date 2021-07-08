@@ -22,54 +22,51 @@ extern "C" {
 struct icipc_receiver;
 
 enum icipc_receiver_sender_state {
-  ICIPC_RECEIVER_SENDER_STATE_CONNECTED = 0,
-  ICIPC_RECEIVER_SENDER_STATE_DISCONNECTED
+        ICIPC_RECEIVER_SENDER_STATE_CONNECTED = 0,
+        ICIPC_RECEIVER_SENDER_STATE_DISCONNECTED
 };
 
 struct icipc_receiver_events {
-  /* emitted when a sender state changes */
-  void (*sender_state) (struct icipc_receiver *self,
+        /* emitted when a sender state changes */
+        void (*sender_state)(
+                        struct icipc_receiver *self,
                         int sender_fd,
                         enum icipc_receiver_sender_state state,
                         void *data);
 
-  /* emitted when message is received and needs to be handled */
-  bool (*handle_message) (struct icipc_receiver *self,
-                          int sender_fd,
-                          const uint8_t *buffer,
-                          size_t size,
-                          void *data);
+        /* emitted when message is received and needs to be handled */
+        bool (*handle_message)(
+                        struct icipc_receiver *self,
+                        int sender_fd,
+                        const uint8_t *buffer,
+                        size_t size,
+                        void *data);
 };
 
 ICIPC_API
-struct icipc_receiver *
-icipc_receiver_new (const char *path,
-                    size_t buffer_size,
-                    const struct icipc_receiver_events *events,
-                    void *events_data,
-                    size_t user_size);
+struct icipc_receiver *icipc_receiver_new(
+                const char *path,
+                size_t buffer_size,
+                const struct icipc_receiver_events *events,
+                void *events_data,
+                size_t user_size);
 
 ICIPC_API
-void
-icipc_receiver_free (struct icipc_receiver *self);
+void icipc_receiver_free(struct icipc_receiver *self);
 
 ICIPC_API
-bool
-icipc_receiver_start (struct icipc_receiver *self);
+bool icipc_receiver_start(struct icipc_receiver *self);
 
 ICIPC_API
-void
-icipc_receiver_stop (struct icipc_receiver *self);
+void icipc_receiver_stop(struct icipc_receiver *self);
 
 ICIPC_API
-bool
-icipc_receiver_is_running (struct icipc_receiver *self);
+bool icipc_receiver_is_running(struct icipc_receiver *self);
 
 /* for subclasses only */
 
 ICIPC_API
-void *
-icipc_receiver_get_user_data (struct icipc_receiver *self);
+void *icipc_receiver_get_user_data(struct icipc_receiver *self);
 
 #ifdef __cplusplus
 }

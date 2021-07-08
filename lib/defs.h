@@ -10,7 +10,7 @@
 #define __ICIPC_DEFS_H__
 
 #if defined(__GNUC__)
-# define ICIPC_API_EXPORT extern __attribute__ ((visibility ("default")))
+# define ICIPC_API_EXPORT extern __attribute__((visibility("default")))
 #else
 # define ICIPC_API_EXPORT extern
 #endif
@@ -20,7 +20,7 @@
 #endif
 
 #ifndef ICIPC_PRIVATE_API
-#  define ICIPC_PRIVATE_API __attribute__ ((deprecated ("Private API")))
+#  define ICIPC_PRIVATE_API __attribute__((deprecated("Private API")))
 #endif
 
 #endif
