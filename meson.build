@@ -32,6 +32,7 @@ common_flags = [
   '-Wunused-result',
 ]
 add_project_arguments(cc.get_supported_arguments(common_flags), language: 'c')
+add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
 subdir('lib')
 subdir('src')

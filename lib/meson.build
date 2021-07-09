@@ -27,11 +27,6 @@ install_headers(icipc_lib_headers,
 
 icipc_lib = library('icipc-' + icipc_api_version,
   icipc_lib_sources,
-  c_args : [
-    '-D_GNU_SOURCE',
-    '-DG_LOG_USE_STRUCTURED',
-    '-DG_LOG_DOMAIN="icipc"',
-  ],
   install: true,
   dependencies : [threads_dep],
   soversion: icipc_so_version,

@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#define _GNU_SOURCE
 #include "test.h"
 #include <icipc.h>
 #include <unistd.h>
