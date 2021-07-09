@@ -55,7 +55,7 @@ static void socket_event_received(EpollThread *t, int fd, void *data) {
         socklen_t addr_size = sizeof(self->addr);
         int sender_fd = accept4(fd, (struct sockaddr *)&self->addr, &addr_size,
                                 SOCK_CLOEXEC | SOCK_NONBLOCK);
-        struct epoll_event event;
+        struct epoll_event event = {0};
         event.events = EPOLLIN;
         event.data.fd = sender_fd;
         epoll_ctl(t->epoll_fd, EPOLL_CTL_ADD, sender_fd, &event);

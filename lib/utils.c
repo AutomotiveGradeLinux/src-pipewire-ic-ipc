@@ -199,7 +199,7 @@ bool icipc_epoll_thread_init(
                 icipc_epoll_thread_event_func_t sock_func,
                 icipc_epoll_thread_event_func_t other_func,
                 void *data) {
-        struct epoll_event event;
+        struct epoll_event event = {0};
 
         self->socket_fd = socket_fd;
         self->event_fd = -1;
