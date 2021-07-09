@@ -33,7 +33,7 @@ icipc_lib = library('icipc-' + icipc_api_version,
     '-DG_LOG_DOMAIN="icipc"',
   ],
   install: true,
-  dependencies : [threads_dep, spa_dep],
+  dependencies : [threads_dep],
   soversion: icipc_so_version,
   version: meson.project_version(),
 )
@@ -41,7 +41,6 @@ icipc_lib = library('icipc-' + icipc_api_version,
 icipc_dep = declare_dependency(
   link_with: icipc_lib,
   include_directories: include_directories('.'),
-  dependencies: [spa_dep],
 )
 
 pkgconfig.generate(icipc_lib,

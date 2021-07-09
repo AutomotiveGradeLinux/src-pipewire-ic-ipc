@@ -6,10 +6,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include <assert.h>
-
-#include <spa/pod/builder.h>
 #include <icipc.h>
 
 typedef struct ClientData {
@@ -28,9 +28,9 @@ static void reply_handler(
         const char *error = NULL;
 
         if (buffer) {
-                const struct spa_pod *pod =
+                const struct icipc_data *data =
                     icipc_client_send_request_finish(self, buffer, size, &error);
-                if (!pod)
+                if (!data)
                         printf("error: %s\n", error ? error : "unknown");
                 else
                         printf("success!\n");
@@ -68,36 +68,21 @@ int main(int argc, char *argv[]) {
                 if (strncmp(str, "help", 4) == 0) {
                         printf("help\tprints this message\n");
                         printf("quit\texits the client\n");
-                        printf("send\tsends a request, usage: send <request-name> [args]\n");
+                        printf("send\tsends a request, usage: send <request-name>\n");
                 } else if (strncmp(str, "quit", 4) == 0) {
                         printf("exiting...\n");
                         break;
                 } else if (strncmp(str, "send", 4) == 0) {
-                        char request_name[128];
-                        char request_args[1024];
+                        char request_name[1024];
                         int n =
-                            sscanf(str, "send %s %s", request_name,
-                                   request_args);
+                            sscanf(str, "send %s", request_name);
                         if (n <= 0)
                                 continue;
 
                         /* send request */
-                        if (n >= 2) {
-                                /* TODO: for now we always create a string pod for args */
-                                struct {
-                                        struct spa_pod_string pod;
-                                        char str[1024];
-                                } args;
-                                args.pod = SPA_POD_INIT_String(1024);
-                                strncpy(args.str, request_args, 1024);
-                                icipc_client_send_request(data.c, request_name,
-                                                          (const struct spa_pod *)&args,
-                                                          reply_handler, &data);
-                        } else {
-                                icipc_client_send_request(data.c, request_name,
-                                                          NULL, reply_handler,
-                                                          &data);
-                        }
+                        icipc_client_send_request(data.c, request_name,
+                                                  NULL, reply_handler,
+                                                  &data);
 
                         /* wait for reply */
                         pthread_mutex_lock(&data.mutex);

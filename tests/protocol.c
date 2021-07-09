@@ -7,36 +7,49 @@
  */
 
 #include "test.h"
-#include <spa/pod/builder.h>
-#include <spa/pod/parser.h>
+#include "data.h"
 #include <icipc.h>
+
+typedef struct DataInt {
+        struct icipc_data hdr;
+        int value;
+} DataInt;
 
 static void test_icipc_protocol() {
         uint8_t b[1024];
 
         /* request null value */
         {
-                icipc_protocol_build_request(b, sizeof(b), "name", NULL);
                 const char *name = NULL;
-                const struct spa_pod *value = NULL;
+                const struct icipc_data *value = NULL;
+
+                icipc_protocol_build_request(b, sizeof(b), "name", NULL);
                 test_bool_true(icipc_protocol_parse_request
                                (b, sizeof(b), &name, &value));
                 test_str_eq(name, "name");
-                test_bool_true(spa_pod_is_none(value));
+                test_cmpint(value->type, ==, (uint32_t) DATA_TYPE_NONE);
         }
 
         /* request */
         {
-                struct spa_pod_int i = SPA_POD_INIT_Int(8);
-                icipc_protocol_build_request(b, sizeof(b), "name",
-                                             (struct spa_pod *)&i);
+                DataInt i = {
+                        .hdr.size = sizeof(int),
+                        .hdr.type = DATA_TYPE_INT,
+                        .value = 8,
+                };
                 const char *name = NULL;
-                const struct spa_pod_int *value = NULL;
+                const struct icipc_data *value = NULL;
+
+                icipc_protocol_build_request(b, sizeof(b), "name",
+                                             (struct icipc_data *)&i);
                 test_bool_true(icipc_protocol_parse_request
                                (b, sizeof(b), &name,
-                                (const struct spa_pod **)&value));
+                                (const struct icipc_data **)&value));
                 test_str_eq(name, "name");
-                test_cmpint(value->value, ==, 8);
+                test_cmpint(ICIPC_DATA_BODY_SIZE(value), ==,
+                            ROUND_UP_TO_ALIGN(sizeof(int)));
+                test_cmpint(value->type, ==, (uint32_t) DATA_TYPE_INT);
+                test_cmpint(*((const int*)ICIPC_DATA_BODY_CONST(value)), ==, 8);
         }
 
         /* reply error */
@@ -51,25 +64,34 @@ static void test_icipc_protocol() {
 
         /* reply ok null value */
         {
+                const struct icipc_data *value = NULL;
+
                 icipc_protocol_build_reply_ok(b, sizeof(b), NULL);
                 test_bool_true(icipc_protocol_is_reply_ok(b, sizeof(b)));
-                const struct spa_pod *value = NULL;
                 test_bool_true(icipc_protocol_parse_reply_ok
                                (b, sizeof(b), &value));
                 test_ptr_notnull(value);
-                test_bool_true(spa_pod_is_none(value));
+                test_cmpint(value->type, ==, (uint32_t) DATA_TYPE_NONE);
         }
 
         /* reply ok */
         {
-                struct spa_pod_int i = SPA_POD_INIT_Int(3);
+                DataInt i = {
+                        .hdr.size = sizeof(int),
+                        .hdr.type = DATA_TYPE_INT,
+                        .value = 3,
+                };
+                const struct icipc_data *value = NULL;
+
                 icipc_protocol_build_reply_ok(b, sizeof(b),
-                                              (struct spa_pod *)&i);
+                                              (struct icipc_data *)&i);
                 test_bool_true(icipc_protocol_is_reply_ok(b, sizeof(b)));
-                const struct spa_pod_int *value = NULL;
                 test_bool_true(icipc_protocol_parse_reply_ok
-                               (b, sizeof(b), (const struct spa_pod **)&value));
-                test_cmpint(value->value, ==, 3);
+                               (b, sizeof(b), (const struct icipc_data **)&value));
+                test_cmpint(ICIPC_DATA_BODY_SIZE(value), ==,
+                            ROUND_UP_TO_ALIGN(sizeof(int)));
+                test_cmpint(value->type, ==, (uint32_t) DATA_TYPE_INT);
+                test_cmpint(*((const int*)ICIPC_DATA_BODY_CONST(value)), ==, 3);
         }
 }
 

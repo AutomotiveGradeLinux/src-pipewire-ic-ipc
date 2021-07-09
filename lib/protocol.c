@@ -6,34 +6,21 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <assert.h>
-
-#include <spa/pod/builder.h>
-#include <spa/pod/parser.h>
-
+#include "data.h"
 #include "protocol.h"
-
-#define SIZE_PADDING 128
 
 enum {
         REPLY_CODE_ERROR = 0,
         REPLY_CODE_OK,
 };
 
-static bool is_reply(const uint8_t *buffer, size_t size, int code) {
-        const struct spa_pod *pod = (const struct spa_pod *)buffer;
-        struct spa_pod_parser p;
-        struct spa_pod_frame f;
-        int parsed_code = 0;
+static bool is_reply(const uint8_t *buffer, size_t size, uint32_t code) {
+        DataParser p;
+        uint32_t parsed_code = 0;
 
-        /* check if struct */
-        if (!spa_pod_is_struct(pod))
+        if (!data_parser_init(&p, buffer, size) ||
+            !data_parser_get_id(&p, &parsed_code))
                 return false;
-
-        /* parse */
-        spa_pod_parser_pod(&p, pod);
-        spa_pod_parser_push_struct(&p, &f);
-        spa_pod_parser_get_int(&p, &parsed_code);
 
         return parsed_code == code;
 }
@@ -42,56 +29,40 @@ static bool is_reply(const uint8_t *buffer, size_t size, int code) {
 
 size_t icipc_protocol_calculate_request_size(
                 const char *name,
-                const struct spa_pod *args) {
+                const struct icipc_data *args) {
         assert (name);
-        return strlen(name) + (args ? SPA_POD_SIZE(args) : 8) + SIZE_PADDING;
+        return sizeof(struct icipc_data) +
+               data_type_string_calc_size(name) +
+               (args ? data_type_raw_calc_size(args) : sizeof(struct icipc_data));
 }
 
 void icipc_protocol_build_request(
                 uint8_t *buffer,
                 size_t size,
                 const char *name,
-                const struct spa_pod *args) {
-        const struct spa_pod none = SPA_POD_INIT_None();
-        struct spa_pod_builder b;
-        struct spa_pod_frame f;
-
-        memset(buffer, 0, size);
-
+                const struct icipc_data *args) {
+        DataBuilder b;
+        const struct icipc_data none = { 0, DATA_TYPE_NONE };
         if (args == NULL)
                 args = &none;
 
-        spa_pod_builder_init(&b, buffer, size);
-        spa_pod_builder_push_struct(&b, &f);
-        spa_pod_builder_string(&b, name);
-        spa_pod_builder_primitive (&b, args);
-        spa_pod_builder_pop(&b, &f);
+        data_builder_init(&b, buffer, size);
+        data_builder_push_string(&b, name);
+        data_builder_push_raw(&b, args);
 }
 
 bool icipc_protocol_parse_request(
                 const uint8_t *buffer,
                 size_t size,
                 const char **name,
-                const struct spa_pod **args) {
-        const struct spa_pod *pod = (const struct spa_pod *)buffer;
-        struct spa_pod_parser p;
-        struct spa_pod_frame f;
+                const struct icipc_data **args) {
+        DataParser p;
         const char *parsed_name = NULL;
-        struct spa_pod *parsed_args = NULL;
+        const struct icipc_data *parsed_args = NULL;
 
-        /* check if struct */
-        if (!spa_pod_is_struct(pod))
-                return false;
-
-        /* parse */
-        spa_pod_parser_pod(&p, pod);
-        spa_pod_parser_push_struct(&p, &f);
-        spa_pod_parser_get_string(&p, &parsed_name);
-        spa_pod_parser_get_pod(&p, &parsed_args);
-        spa_pod_parser_pop(&p, &f);
-
-        /* check name and args */
-        if (name == NULL || args == NULL)
+        if (!data_parser_init(&p, buffer, size) ||
+            !data_parser_get_string(&p, &parsed_name) ||
+            !data_parser_get_raw(&p, &parsed_args))
                 return false;
 
         if (name != NULL)
@@ -101,49 +72,41 @@ bool icipc_protocol_parse_request(
         return true;
 }
 
-size_t icipc_protocol_calculate_reply_ok_size(const struct spa_pod *value) {
-        return (value ? SPA_POD_SIZE(value) : 8) + SIZE_PADDING;
+size_t icipc_protocol_calculate_reply_ok_size(const struct icipc_data *value) {
+        return sizeof(struct icipc_data) +
+               data_type_id_calc_size() +
+               (value ? data_type_raw_calc_size(value) : sizeof(struct icipc_data));
 }
 
 size_t icipc_protocol_calculate_reply_error_size(const char *msg) {
         assert (msg);
-        return strlen(msg) + SIZE_PADDING;
+        return sizeof(struct icipc_data) +
+               data_type_id_calc_size() +
+               data_type_string_calc_size(msg);
 }
 
 void icipc_protocol_build_reply_ok(
                 uint8_t *buffer,
                 size_t size,
-                const struct spa_pod *value) {
-        const struct spa_pod none = SPA_POD_INIT_None();
-        struct spa_pod_builder b;
-        struct spa_pod_frame f;
-
-        memset(buffer, 0, size);
-
+                const struct icipc_data *value) {
+        DataBuilder b;
+        const struct icipc_data none = { 0, DATA_TYPE_NONE };
         if (value == NULL)
                 value = &none;
 
-        spa_pod_builder_init(&b, buffer, size);
-        spa_pod_builder_push_struct(&b, &f);
-        spa_pod_builder_int(&b, REPLY_CODE_OK);
-        spa_pod_builder_primitive(&b, value);
-        spa_pod_builder_pop(&b, &f);
+        data_builder_init(&b, buffer, size);
+        data_builder_push_id(&b, REPLY_CODE_OK);
+        data_builder_push_raw(&b, value);
 }
 
 void icipc_protocol_build_reply_error(
                 uint8_t *buffer,
                 size_t size,
                 const char *msg) {
-        struct spa_pod_builder b;
-        struct spa_pod_frame f;
-
-        memset(buffer, 0, size);
-
-        spa_pod_builder_init(&b, buffer, size);
-        spa_pod_builder_push_struct(&b, &f);
-        spa_pod_builder_int(&b, REPLY_CODE_ERROR);
-        spa_pod_builder_string (&b, msg);
-        spa_pod_builder_pop(&b, &f);
+        DataBuilder b;
+        data_builder_init(&b, buffer, size);
+        data_builder_push_id(&b, REPLY_CODE_ERROR);
+        data_builder_push_string(&b, msg);
 }
 
 bool icipc_protocol_is_reply_ok(const uint8_t *buffer, size_t size) {
@@ -154,52 +117,36 @@ bool icipc_protocol_is_reply_error(const uint8_t *buffer, size_t size) {
         return is_reply (buffer, size, REPLY_CODE_ERROR);
 }
 
-bool icipc_protocol_parse_reply_ok (
+bool icipc_protocol_parse_reply_ok(
                 const uint8_t *buffer,
                 size_t size,
-                const struct spa_pod **value) {
-        const struct spa_pod *pod = (const struct spa_pod *)buffer;
-        struct spa_pod_parser p;
-        struct spa_pod_frame f;
-        int parsed_code = 0;
-        struct spa_pod *parsed_value = NULL;
+                const struct icipc_data **value) {
+        DataParser p;
+        uint32_t parsed_code = 0;
+        const struct icipc_data *parsed_value = NULL;
 
-        /* check if struct */
-        if (!spa_pod_is_struct(pod))
+        if (!data_parser_init(&p, buffer, size) ||
+            !data_parser_get_id(&p, &parsed_code) ||
+            !data_parser_get_raw(&p, &parsed_value))
                 return false;
-
-        /* parse */
-        spa_pod_parser_pod(&p, pod);
-        spa_pod_parser_push_struct(&p, &f);
-        spa_pod_parser_get_int(&p, &parsed_code);
-        spa_pod_parser_get_pod(&p, &parsed_value);
-        spa_pod_parser_pop(&p, &f);
 
         if (value != NULL)
                 *value = parsed_value;
         return true;
 }
 
-bool icipc_protocol_parse_reply_error (
+bool icipc_protocol_parse_reply_error(
                 const uint8_t *buffer,
                 size_t size,
                 const char **msg) {
-        const struct spa_pod *pod = (const struct spa_pod *)buffer;
-        struct spa_pod_parser p;
-        struct spa_pod_frame f;
-        int parsed_code = 0;
+        DataParser p;
+        uint32_t parsed_code = 0;
         const char *parsed_msg = NULL;
 
-        /* check if struct */
-        if (!spa_pod_is_struct(pod))
+        if (!data_parser_init(&p, buffer, size) ||
+            !data_parser_get_id(&p, &parsed_code) ||
+            !data_parser_get_string(&p, &parsed_msg))
                 return false;
-
-        /* parse */
-        spa_pod_parser_pod(&p, pod);
-        spa_pod_parser_push_struct(&p, &f);
-        spa_pod_parser_get_int(&p, &parsed_code);
-        spa_pod_parser_get_string(&p, &parsed_msg);
-        spa_pod_parser_pop(&p, &f);
 
         if (msg != NULL)
                 *msg = parsed_msg;

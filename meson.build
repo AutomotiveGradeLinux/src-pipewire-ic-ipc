@@ -9,7 +9,6 @@ project('icipc', ['c'],
 )
 
 threads_dep = dependency('threads', required: true)
-spa_dep = dependency('libspa-0.2', version: '>= 0.2', required: true)
 
 pkgconfig = import('pkgconfig')
 cc = meson.get_compiler('c')

@@ -40,7 +40,7 @@ void icipc_client_free(struct icipc_client *self) {
 bool icipc_client_send_request(
                 struct icipc_client *self,
                 const char *name,
-                const struct spa_pod *args,
+                const struct icipc_data *args,
                 icipc_sender_reply_func_t reply,
                 void *data) {
         struct icipc_sender *base = icipc_client_to_sender(self);
@@ -55,7 +55,7 @@ bool icipc_client_send_request(
         return icipc_sender_send(base, buffer, size, reply, data);
 }
 
-const struct spa_pod *icipc_client_send_request_finish(
+const struct icipc_data *icipc_client_send_request_finish(
                 struct icipc_sender *self,
                 const uint8_t * buffer,
                 size_t size,
@@ -68,7 +68,7 @@ const struct spa_pod *icipc_client_send_request_finish(
 
         /* ok */
         if (icipc_protocol_is_reply_ok(buffer, size)) {
-                const struct spa_pod *value = NULL;
+                const struct icipc_data *value = NULL;
                 if (icipc_protocol_parse_reply_ok(buffer, size, &value))
                         return value;
         }

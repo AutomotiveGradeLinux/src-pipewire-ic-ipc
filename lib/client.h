@@ -9,8 +9,6 @@
 #ifndef __ICIPC_CLIENT_H__
 #define __ICIPC_CLIENT_H__
 
-#include <spa/pod/pod.h>
-
 #include <stddef.h>
 
 #include "sender.h"
@@ -23,6 +21,7 @@ extern "C" {
 #define icipc_client_to_sender(self) ((struct icipc_sender *)(self))
 
 struct icipc_client;
+struct icipc_data;
 
 ICIPC_API
 struct icipc_client *icipc_client_new(const char *path, bool connect);
@@ -34,14 +33,14 @@ ICIPC_API
 bool icipc_client_send_request(
                 struct icipc_client *self,
                 const char *name,
-                const struct spa_pod *args,
+                const struct icipc_data *args,
                 icipc_sender_reply_func_t reply,
                 void *data);
 
 /* for reply handlers only */
 
 ICIPC_API
-const struct spa_pod *icipc_client_send_request_finish(
+const struct icipc_data *icipc_client_send_request_finish(
                 struct icipc_sender *self,
                 const uint8_t *buffer,
                 size_t size,

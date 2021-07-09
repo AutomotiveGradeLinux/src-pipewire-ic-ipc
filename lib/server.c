@@ -7,6 +7,7 @@
  */
 
 #include <pthread.h>
+#include <string.h>
 
 #include "private.h"
 #include "protocol.h"
@@ -60,7 +61,7 @@ static bool handle_message(
                 void *data) {
         ServerPriv *priv = icipc_receiver_get_user_data(base);
         const char *name = NULL;
-        const struct spa_pod *args = NULL;
+        const struct icipc_data *args = NULL;
 
         icipc_log_info("server: message from client %d received", sender_fd);
 
@@ -231,7 +232,7 @@ void icipc_server_clear_request_handler(
 bool icipc_server_reply_ok(
                 struct icipc_server *self,
                 int client_fd,
-                const struct spa_pod *value) {
+                const struct icipc_data *value) {
         const size_t s = icipc_protocol_calculate_reply_ok_size(value);
         uint8_t b[s];
         icipc_protocol_build_reply_ok(b, s, value);

@@ -9,8 +9,6 @@
 #ifndef __ICIPC_SERVER_H__
 #define __ICIPC_SERVER_H__
 
-#include <spa/pod/pod.h>
-
 #include "defs.h"
 #include "receiver.h"
 
@@ -21,6 +19,7 @@ extern "C" {
 #define icipc_server_to_receiver(self) ((struct icipc_receiver *)(self))
 
 struct icipc_server;
+struct icipc_data;
 
 typedef void (*icipc_server_client_handler_func_t)(
                 struct icipc_server *self,
@@ -32,7 +31,7 @@ typedef bool (*icipc_server_request_handler_func_t)(
                 struct icipc_server *self,
                 int client_fd,
                 const char *name,
-                const struct spa_pod *args,
+                const struct icipc_data *args,
                 void *data);
 
 ICIPC_API
@@ -68,7 +67,7 @@ ICIPC_API
 bool icipc_server_reply_ok(
                 struct icipc_server *self,
                 int client_fd,
-                const struct spa_pod *value);
+                const struct icipc_data *value);
 
 ICIPC_API
 bool icipc_server_reply_error(

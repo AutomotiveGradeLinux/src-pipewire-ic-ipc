@@ -8,11 +8,15 @@
 
 #define _GNU_SOURCE
 #include "test.h"
-#include <spa/pod/builder.h>
-#include <spa/pod/parser.h>
+#include "data.h"
 #include <icipc.h>
 #include <unistd.h>
 #include <pthread.h>
+
+typedef struct DataInt {
+        struct icipc_data hdr;
+        int value;
+} DataInt;
 
 static inline char *new_address() {
         char *address = NULL;
@@ -25,20 +29,27 @@ static bool increment_request_handler(
                 struct icipc_server *self,
                 int client_fd,
                 const char *name,
-                const struct spa_pod *args,
+                const struct icipc_data *args,
                 void *data) {
         int32_t val = 0;
-        test_bool_true(spa_pod_is_int(args));
-        test_bool_true(spa_pod_get_int(args, &val) == 0);
-        struct spa_pod_int res = SPA_POD_INIT_Int(val + 1);
-        return icipc_server_reply_ok(self, client_fd, (struct spa_pod *)&res);
+        test_cmpint(args->type, ==, (uint32_t) DATA_TYPE_INT);
+        test_cmpint(ICIPC_DATA_BODY_SIZE(args), ==,
+                    ROUND_UP_TO_ALIGN(sizeof(int)));
+        val = *((const int*)ICIPC_DATA_BODY_CONST(args));
+
+        DataInt res = {
+                .hdr.size = sizeof(int),
+                .hdr.type = DATA_TYPE_INT,
+                .value = val + 1,
+        };
+        return icipc_server_reply_ok(self, client_fd, (struct icipc_data *)&res);
 }
 
 static bool error_request_handler(
                 struct icipc_server *self,
                 int client_fd,
                 const char *name,
-                const struct spa_pod *args,
+                const struct icipc_data *args,
                 void *data) {
         return icipc_server_reply_error(self, client_fd, "error message");
 }
@@ -68,11 +79,13 @@ static void reply_handler(
 
         pthread_mutex_lock(&data->mutex);
 
-        const struct spa_pod *pod =
+        const struct icipc_data *args =
             icipc_client_send_request_finish(self, buffer, size, &data->error);
-        if (pod) {
-                test_bool_true(spa_pod_is_int(pod));
-                test_bool_true(spa_pod_get_int(pod, &data->incremented) == 0);
+        if (args) {
+                test_cmpint(args->type, ==, (uint32_t) DATA_TYPE_INT);
+                test_cmpint(ICIPC_DATA_BODY_SIZE(args), ==,
+                            ROUND_UP_TO_ALIGN(sizeof(int)));
+                data->incremented = *((const int*)ICIPC_DATA_BODY_CONST(args));
         }
         data->n_replies++;
         pthread_cond_signal(&data->cond);
@@ -100,9 +113,13 @@ static void test_icipc_server_client() {
         data.incremented = -1;
         data.error = NULL;
         data.n_replies = 0;
-        struct spa_pod_int i = SPA_POD_INIT_Int(3);
+        DataInt i = {
+                .hdr.size = sizeof(int),
+                .hdr.type = DATA_TYPE_INT,
+                .value = 3,
+        };
         test_bool_true(icipc_client_send_request
-                       (c, "INCREMENT", (struct spa_pod *)&i, reply_handler,
+                       (c, "INCREMENT", (struct icipc_data *)&i, reply_handler,
                         &data));
         wait_for_reply(&data, 1);
         test_ptr_null(data.error);
