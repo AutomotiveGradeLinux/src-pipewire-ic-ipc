@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <alloca.h>
 #include "private.h"
 #include "protocol.h"
 #include "sender.h"
@@ -50,7 +51,7 @@ bool icipc_client_send_request(
                 return false;
 
         const size_t size = icipc_protocol_calculate_request_size(name, args);
-        uint8_t buffer[size];
+        uint8_t *buffer = alloca(size);
         icipc_protocol_build_request(buffer, size, name, args);
         return icipc_sender_send(base, buffer, size, reply, data);
 }

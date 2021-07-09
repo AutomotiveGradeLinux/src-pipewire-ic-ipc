@@ -8,6 +8,7 @@
 
 #include <pthread.h>
 #include <string.h>
+#include <alloca.h>
 
 #include "private.h"
 #include "protocol.h"
@@ -69,7 +70,7 @@ static bool handle_message(
         if (!icipc_protocol_parse_request(buffer, size, &name, &args)) {
                 const char *msg = "could not parse request";
                 const size_t s = icipc_protocol_calculate_reply_error_size(msg);
-                uint8_t b[s];
+                uint8_t *b = alloca(s);
                 icipc_protocol_build_reply_error(b, s, msg);
                 return icipc_socket_write(sender_fd, b, s) == (ssize_t) s;
         }
@@ -234,7 +235,7 @@ bool icipc_server_reply_ok(
                 int client_fd,
                 const struct icipc_data *value) {
         const size_t s = icipc_protocol_calculate_reply_ok_size(value);
-        uint8_t b[s];
+        uint8_t *b = alloca(s);
         icipc_protocol_build_reply_ok(b, s, value);
         return icipc_socket_write(client_fd, b, s) == (ssize_t) s;
 }
@@ -247,7 +248,7 @@ bool icipc_server_reply_error(
                 return false;
 
         const size_t s = icipc_protocol_calculate_reply_error_size(msg);
-        uint8_t b[s];
+        uint8_t *b = alloca(s);
         icipc_protocol_build_reply_error(b, s, msg);
         return icipc_socket_write(client_fd, b, s) == (ssize_t) s;
 }

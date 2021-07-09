@@ -91,7 +91,6 @@ int icipc_construct_socket_path(const char *name, char *buf, size_t buf_size) {
         bool path_is_absolute;
         const char *runtime_dir = NULL;
         struct passwd pwd, *result = NULL;
-        char buffer[4096];
         int name_size;
 
         path_is_absolute = name[0] == '/';
@@ -105,8 +104,12 @@ int icipc_construct_socket_path(const char *name, char *buf, size_t buf_size) {
                 if (runtime_dir == NULL)
                         runtime_dir = getenv("USERPROFILE");
                 if (runtime_dir == NULL) {
+                        long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+                        if (bufsize == -1)
+                                bufsize = 4096;
+                        char *buffer = alloca(bufsize);
                         if (getpwuid_r
-                            (getuid(), &pwd, buffer, sizeof(buffer),
+                            (getuid(), &pwd, buffer, bufsize,
                              &result) == 0)
                                 runtime_dir = result ? result->pw_dir : NULL;
                 }
