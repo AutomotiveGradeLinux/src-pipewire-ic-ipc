@@ -34,6 +34,7 @@ struct impl {
         struct icipc_server *server;
 
         struct pw_array clients;
+        bool suspended;
 
         char *pipewire_remote;
         struct spa_source *timeout_source;
@@ -171,6 +172,12 @@ static void on_global_added (
                 pw_proxy_add_listener((struct pw_proxy*)impl->metadata,
                                       &impl->metadata_proxy_listener,
                                       &metadata_proxy_events, impl);
+
+                /* sync suspend status */
+                if (impl->suspended)
+                        pw_metadata_set_property(impl->metadata, 0,
+                                                 "suspend.playback",
+                                                 "Spa:Bool", "1");
         }
 }
 
@@ -239,6 +246,7 @@ static int do_suspend_resume(
                 pw_metadata_set_property(impl->metadata, 0, "suspend.playback",
                         "Spa:Bool", suspend ? "1" : NULL);
         }
+        impl->suspended = suspend ? true : false;
         return 0;
 }
 
