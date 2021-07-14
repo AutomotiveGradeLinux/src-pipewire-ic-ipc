@@ -2,6 +2,7 @@ if get_option('client')
   executable('icipc-client',
     'icipc-client.c',
     dependencies : [icipc_dep, threads_dep],
+    install : true,
   )
 endif
 
