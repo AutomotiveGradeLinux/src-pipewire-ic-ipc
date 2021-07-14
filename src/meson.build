@@ -16,4 +16,14 @@ if get_option('server')
     install_dir : pipewire_dep.get_variable(pkgconfig: 'moduledir'),
     dependencies : [icipc_dep, pipewire_dep],
   )
+
+  if systemd_dep.found() and libsystemd_dep.found()
+    systemd_system_services_dir = systemd_dep.get_pkgconfig_variable(
+      'systemdsystemunitdir',
+      define_variable: ['prefix', get_option('prefix')])
+
+    install_data(
+      sources: ['pipewire-ic-ipc.socket', 'pipewire-ic-ipc.service'],
+      install_dir: systemd_system_services_dir)
+  endif
 endif

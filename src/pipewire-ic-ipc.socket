@@ -1,0 +1,12 @@
+[Unit]
+Description=PipeWire AGL Instrument Cluster IPC
+
+[Socket]
+Priority=6
+ListenStream=%t/pipewire/icipc-0
+SocketUser=pipewire
+SocketGroup=pipewire
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

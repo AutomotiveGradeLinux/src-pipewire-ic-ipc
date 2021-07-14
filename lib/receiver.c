@@ -8,13 +8,20 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/epoll.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include "private.h"
 #include "receiver.h"
 #include "icipc.h"
@@ -24,6 +31,7 @@
 struct icipc_receiver {
         struct sockaddr_un addr;
         int socket_fd;
+        bool activated;
 
         uint8_t *buffer_read;
         size_t buffer_size;
@@ -116,28 +124,60 @@ struct icipc_receiver *icipc_receiver_new(
 
         /* set address */
         self->addr.sun_family = AF_LOCAL;
-        res =
-            icipc_construct_socket_path(path, self->addr.sun_path,
-                                        sizeof(self->addr.sun_path));
+        res = icipc_construct_socket_path(path, self->addr.sun_path,
+                                          sizeof(self->addr.sun_path));
         if (res < 0)
                 goto error;
 
-        unlink(self->addr.sun_path);
+#ifdef HAVE_SYSTEMD
+        {
+                int i, n = sd_listen_fds(0);
+                for (i = 0; i < n; ++i) {
+                        if (sd_is_socket_unix(SD_LISTEN_FDS_START + i,
+                                              SOCK_STREAM, 1,
+                                              self->addr.sun_path, 0) > 0) {
+                                self->socket_fd = SD_LISTEN_FDS_START + i;
+                                self->activated = true;
+                                icipc_log_info("receiver %p: Found socket "
+                                               "activation socket for '%s'",
+                                               self, self->addr.sun_path);
+                                break;
+                        }
+                }
+        }
+#endif
 
-        /* create socket */
-        self->socket_fd =
-            socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
-        if (self->socket_fd < 0)
-                goto error;
+        if (self->socket_fd < 0) {
+                struct stat socket_stat;
 
-        /* bind socket */
-        if (bind(self->socket_fd, (struct sockaddr *)&self->addr,
-                 sizeof(self->addr)) != 0)
-                goto error;
+                /* create socket */
+                self->socket_fd =
+                        socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+                if (self->socket_fd < 0)
+                        goto error;
 
-        /* listen socket */
-        if (listen(self->socket_fd, MAX_SENDERS) != 0)
-                goto error;
+                if (stat(self->addr.sun_path, &socket_stat) < 0) {
+                        if (errno != ENOENT) {
+                                res = -errno;
+                                icipc_log_error("receiver %p: stat %s failed "
+                                                "with error: %m",
+                                                self, self->addr.sun_path);
+                                goto error;
+                        }
+                } else if (socket_stat.st_mode & S_IWUSR ||
+                           socket_stat.st_mode & S_IWGRP) {
+                        unlink(self->addr.sun_path);
+                }
+
+                /* bind socket */
+                if (bind(self->socket_fd, (struct sockaddr *)&self->addr,
+                         sizeof(self->addr)) != 0)
+                        goto error;
+
+                /* listen socket */
+                if (listen(self->socket_fd, MAX_SENDERS) != 0)
+                        goto error;
+        }
 
         /* alloc buffer read */
         self->buffer_size = buffer_size;
@@ -174,7 +214,8 @@ void icipc_receiver_free(struct icipc_receiver *self) {
         icipc_epoll_thread_destroy(&self->epoll_thread);
         free(self->buffer_read);
         close(self->socket_fd);
-        unlink(self->addr.sun_path);
+        if (!self->activated)
+                unlink(self->addr.sun_path);
         free(self);
 }
 

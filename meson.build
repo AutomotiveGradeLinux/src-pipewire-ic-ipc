@@ -9,7 +9,12 @@ project('icipc', ['c'],
 )
 
 threads_dep = dependency('threads', required: true)
-pipewire_dep = dependency('libpipewire-0.3', required: get_option('server'))
+libsystemd_dep = dependency('libsystemd', required: get_option('systemd'))
+
+if get_option('server')
+  pipewire_dep = dependency('libpipewire-0.3', required: true)
+  systemd_dep = dependency('systemd', required: get_option('systemd'))
+endif
 
 pkgconfig = import('pkgconfig')
 cc = meson.get_compiler('c')
@@ -34,6 +39,10 @@ common_flags = [
 ]
 add_project_arguments(cc.get_supported_arguments(common_flags), language: 'c')
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
+
+if libsystemd_dep.found()
+  add_project_arguments('-DHAVE_SYSTEMD', language: 'c')
+endif
 
 subdir('lib')
 subdir('src')

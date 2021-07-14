@@ -28,7 +28,7 @@ install_headers(icipc_lib_headers,
 icipc_lib = library('icipc-' + icipc_api_version,
   icipc_lib_sources,
   install: true,
-  dependencies : [threads_dep],
+  dependencies : [threads_dep, libsystemd_dep],
   soversion: icipc_so_version,
   version: meson.project_version(),
 )
