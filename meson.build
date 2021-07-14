@@ -9,6 +9,7 @@ project('icipc', ['c'],
 )
 
 threads_dep = dependency('threads', required: true)
+pipewire_dep = dependency('libpipewire-0.3', required: get_option('server'))
 
 pkgconfig = import('pkgconfig')
 cc = meson.get_compiler('c')

@@ -1,0 +1,4 @@
+option('server', type : 'boolean', value : 'true',
+       description: 'Build the server-side (requires pipewire dep)')
+option('client', type : 'boolean', value : 'true',
+       description: 'Build the client-side (no dependencies)')
