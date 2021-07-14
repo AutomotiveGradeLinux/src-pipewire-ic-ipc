@@ -5,6 +5,7 @@ project('icipc', ['c'],
   default_options : [
     'warning_level=1',
     'buildtype=debugoptimized',
+    'default_library=static',
   ]
 )
 
