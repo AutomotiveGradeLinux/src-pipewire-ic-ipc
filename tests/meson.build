@@ -4,6 +4,18 @@ common_env = environment({
   'ICIPC_DEBUG': '3',
 })
 
+valgrind = find_program('valgrind', required: false)
+if valgrind.found()
+  add_test_setup('valgrind',
+    exe_wrapper: [ valgrind,
+      '--leak-check=full',
+      '--gen-suppressions=all',
+      '--error-exitcode=3',
+      '--keep-debuginfo=yes',
+    ],
+    timeout_multiplier: 2)
+endif
+
 test(
   'test-icipc-sender-receiver',
   executable('test-sender-receiver', 'sender-receiver.c', dependencies: common_deps),
