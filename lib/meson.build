@@ -8,6 +8,7 @@ icipc_lib_sources = files(
 )
 
 icipc_lib_headers = files(
+  'defs.h',
   'protocol.h',
   'receiver.h',
   'sender.h',
