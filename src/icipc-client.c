@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <pthread.h>
 #include <assert.h>
 #include <icipc.h>
@@ -47,6 +48,7 @@ static void reply_handler(
 
 int main(int argc, char *argv[]) {
         ClientData data;
+        char str[LINE_MAX];
 
         if (argc < 2) {
                 printf("usage: <server-path>\n");
@@ -60,23 +62,16 @@ int main(int argc, char *argv[]) {
         data.reply_received = false;
 
         while (true) {
-                char str[1024];
-
+                memset(str, 0, sizeof(str));
                 printf("> ");
-                fgets(str, 1023, stdin);
+                fgets(str, sizeof(str), stdin);
 
-                if (strncmp(str, "help", 4) == 0) {
-                        printf("help\tprints this message\n");
-                        printf("quit\texits the client\n");
-                        printf("send\tsends a request, usage: send <request-name>\n");
-                } else if (strncmp(str, "quit", 4) == 0) {
+                if (strncmp(str, "quit", 4) == 0) {
                         printf("exiting...\n");
                         break;
-                } else if (strncmp(str, "send", 4) == 0) {
-                        char request_name[1024];
-                        int n =
-                            sscanf(str, "send %s", request_name);
-                        if (n <= 0)
+                } else if (strncmp(str, "send ", 5) == 0) {
+                        const char *request_name = str + 5;
+                        if (*request_name == '\0')
                                 continue;
 
                         /* send request */
@@ -89,6 +84,10 @@ int main(int argc, char *argv[]) {
                         while (!data.reply_received)
                                 pthread_cond_wait(&data.cond, &data.mutex);
                         pthread_mutex_unlock(&data.mutex);
+                } else {
+                        printf("help\tprints this message\n");
+                        printf("quit\texits the client\n");
+                        printf("send\tsends a request, usage: send [SUSPEND|RESUME]\n");
                 }
         }
 
