@@ -31,12 +31,12 @@ enum {
 #define test_log(...) fprintf(stderr, __VA_ARGS__)
 #define test_vlog(format_, args_) vfprintf(stderr, format_, args_)
 
-static inline bool _test_streq(const char *s1, const char *s2) {
+static inline bool test_priv_streq(const char *s1, const char *s2) {
         return TEST_LIKELY(s1 && s2) ? strcmp(s1, s2) == 0 : s1 == s2;
 }
 
 TEST_NORETURN
-static inline void _test_fail(
+static inline void test_priv_fail(
                 const char *file, int line, const char *func,
                 const char *message) {
         test_log("FAILED: %s\n", message);
@@ -45,7 +45,7 @@ static inline void _test_fail(
 }
 
 TEST_NORETURN
-static inline void _test_fail_comparison_bool(
+static inline void test_priv_fail_comparison_bool(
                 const char *file, int line, const char *func,
                 const char *operator, bool a, bool b,
                 const char *astr, const char *bstr) {
@@ -57,7 +57,7 @@ static inline void _test_fail_comparison_bool(
 }
 
 TEST_NORETURN
-static inline void _test_fail_comparison_int(
+static inline void test_priv_fail_comparison_int(
                 const char *file, int line, const char *func,
                 const char *operator, int a, int b,
                 const char *astr, const char *bstr) {
@@ -68,7 +68,7 @@ static inline void _test_fail_comparison_int(
 }
 
 TEST_NORETURN
-static inline void _test_fail_comparison_double(
+static inline void test_priv_fail_comparison_double(
                 const char *file, int line, const char *func,
                 const char *operator, double a, double b,
                 const char *astr, const char *bstr) {
@@ -79,7 +79,7 @@ static inline void _test_fail_comparison_double(
 }
 
 TEST_NORETURN
-static inline void _test_fail_comparison_ptr(
+static inline void test_priv_fail_comparison_ptr(
                 const char *file, int line, const char *func,
                 const char *comparison) {
         test_log("FAILED COMPARISON: %s\n", comparison);
@@ -88,7 +88,7 @@ static inline void _test_fail_comparison_ptr(
 }
 
 TEST_NORETURN
-static inline void _test_fail_comparison_str(
+static inline void test_priv_fail_comparison_str(
                 const char *file, int line, const char *func,
                 const char *comparison, const char *a, const char *b) {
         test_log("FAILED COMPARISON: %s, expanded (\"%s\" vs \"%s\")\n",
@@ -98,7 +98,7 @@ static inline void _test_fail_comparison_str(
 }
 
 #define test_fail_if_reached() \
-        _test_fail(__FILE__, __LINE__, __func__, \
+        test_priv_fail(__FILE__, __LINE__, __func__, \
                         "This line is supposed to be unreachable")
 
 #define test_cmpbool(a_, op_, b_) \
@@ -106,7 +106,7 @@ static inline void _test_fail_comparison_str(
                 bool _a = !!(a_); \
                 bool _b = !!(b_); \
                 if (!(_a op_ _b)) \
-                        _test_fail_comparison_bool(__FILE__, __LINE__, __func__,\
+                        test_priv_fail_comparison_bool(__FILE__, __LINE__, __func__,\
                                         #op_, _a, _b, #a_, #b_); \
         } while(0)
 
@@ -121,10 +121,10 @@ static inline void _test_fail_comparison_str(
                 __typeof__(a_) _a = a_; \
                 __typeof__(b_) _b = b_; \
                 if (trunc(_a) != _a || trunc(_b) != _b) \
-                        _test_fail(__FILE__, __LINE__, __func__, \
+                        test_priv_fail(__FILE__, __LINE__, __func__, \
                                 "test_int_* used for non-integer value"); \
                 if (!((_a) op_ (_b))) \
-                        _test_fail_comparison_int(__FILE__, __LINE__, __func__,\
+                        test_priv_fail_comparison_int(__FILE__, __LINE__, __func__,\
                                         #op_, _a, _b, #a_, #b_); \
         } while(0)
 
@@ -133,7 +133,7 @@ static inline void _test_fail_comparison_str(
                 __typeof__(a_) _a = a_; \
                 __typeof__(b_) _b = b_; \
                 if (!((_a) op_ (_b))) \
-                        _test_fail_comparison_ptr(__FILE__, __LINE__, __func__,\
+                        test_priv_fail_comparison_ptr(__FILE__, __LINE__, __func__,\
                                         #a_ " " #op_ " " #b_); \
         } while(0)
 
@@ -149,7 +149,7 @@ static inline void _test_fail_comparison_str(
                 __typeof__(a_) _a = a_; \
                 __typeof__(b_) _b = b_; \
                 if (!((_a) op_ (_b)) && fabs((_a) - (_b)) > EPSILON)  \
-                        _test_fail_comparison_double(__FILE__, __LINE__, __func__,\
+                        test_priv_fail_comparison_double(__FILE__, __LINE__, __func__,\
                                         #op_, _a, _b, #a_, #b_); \
         } while(0)
 
@@ -157,8 +157,8 @@ static inline void _test_fail_comparison_str(
         do { \
                 const char *_a = a_; \
                 const char *_b = b_; \
-                if (!_test_streq(_a, _b)) \
-                        _test_fail_comparison_str(__FILE__, __LINE__, __func__, \
+                if (!test_priv_streq(_a, _b)) \
+                        test_priv_fail_comparison_str(__FILE__, __LINE__, __func__, \
                                         #a_ " equals " #b_, _a, _b); \
         } while(0)
 
@@ -166,7 +166,7 @@ static inline void _test_fail_comparison_str(
         do { \
                 const char *_a = a_; \
                 const char *_b = b_; \
-                if (_test_streq(_a, _b)) \
-                        _test_fail_comparison_str(__FILE__, __LINE__, __func__, \
+                if (test_priv_streq(_a, _b)) \
+                        test_priv_fail_comparison_str(__FILE__, __LINE__, __func__, \
                                         #a_ " not equal to " #b_, _a, _b); \
         } while(0)
