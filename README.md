@@ -87,6 +87,23 @@ To demo it with `libpipewire-module-protocol-ic-ipc` being the server, use:
  * `send SUSPEND` - suspend playback on the host
  * `send RESUME` - resume playback on the host
 
+## Writing IC apps that use libicipc
+
+IC apps that need to use this SUSPEND/RESUME mechanism for sound, should
+directly use libicipc.
+
+For API documentation, refer to `lib/client.h`. Clients should use only
+the API provided in this file.
+
+To link to libicipc, use the provided `icipc-0.1` pkg-config package:
+```
+$ pkg-config --cflags --libs icipc-0.1
+```
+
+By default, the libicipc library is built statically. If you wish to build
+a dynamically linked version, pass the `-Ddefault_library=dynamic` option to
+meson when compiling `pipewire-ic-ipc`
+
 ## Compilation & Running
 
 To compile:
