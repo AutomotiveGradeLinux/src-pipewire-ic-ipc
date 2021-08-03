@@ -1,0 +1,5 @@
+Checks: 'concurrency-*,bugprone-*,performance-*,portability-*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling'
+HeaderFilterRegex: '(lib|tests)/.*'
+CheckOptions:
+  - key: bugprone-reserved-identifier.AllowedIdentifiers
+    value: '__ICIPC_CLIENT_H__;__ICIPC_DEFS_H__;__ICIPC_H__;__ICIPC_PRIVATE_H__;__ICIPC_PROTOCOL_H__;__ICIPC_RECEIVER_H__;__ICIPC_SENDER_H__;__ICIPC_SERVER_H__'
