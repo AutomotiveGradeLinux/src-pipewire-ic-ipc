@@ -158,7 +158,6 @@ struct icipc_receiver *icipc_receiver_new(
 
                 if (stat(self->addr.sun_path, &socket_stat) < 0) {
                         if (errno != ENOENT) {
-                                res = -errno;
                                 icipc_log_error("receiver %p: stat %s failed "
                                                 "with error: %m",
                                                 self, self->addr.sun_path);

@@ -26,8 +26,8 @@ struct icipc_data {
 #define ICIPC_DATA_BODY_SIZE(d)  (((const struct icipc_data*)(d))->size)
 #define ICIPC_DATA_TYPE(d)       (((const struct icipc_data*)(d))->type)
 #define ICIPC_DATA_SIZE(d)       (sizeof(struct icipc_data) + ICIPC_DATA_BODY_SIZE(d))
-#define ICIPC_DATA_BODY(d)       ((void*)(((uint8_t *) d) + sizeof(struct icipc_data)))
-#define ICIPC_DATA_BODY_CONST(d) ((const void*)(((const uint8_t *) d) + sizeof(struct icipc_data)))
+#define ICIPC_DATA_BODY(d)       ((void*)(((uint8_t *) (d)) + sizeof(struct icipc_data)))
+#define ICIPC_DATA_BODY_CONST(d) ((const void*)(((const uint8_t *) (d)) + sizeof(struct icipc_data)))
 
 enum {
         DATA_TYPE_NONE = 1,     /* SPA_TYPE_None */

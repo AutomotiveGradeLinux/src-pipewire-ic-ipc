@@ -50,10 +50,10 @@ static int push_sync_task(
                 struct icipc_sender *self,
                 icipc_sender_reply_func_t func,
                 void *data) {
-        size_t i;
+        int i;
         for (i = MAX_ASYNC_TASKS; i > 1; i--) {
-                SenderTask *curr = self->async_tasks + i - 1;
-                SenderTask *next = self->async_tasks + i - 2;
+                SenderTask *curr = &self->async_tasks[i - 1];
+                SenderTask *next = &self->async_tasks[i - 2];
                 if (next->func != NULL && curr->func == NULL) {
                         curr->func = func;
                         curr->data = data;
@@ -74,9 +74,9 @@ static void pop_sync_task(
                 bool all,
                 const uint8_t * buffer,
                 size_t size) {
-        size_t i;
+        int i;
         for (i = 0; i < MAX_ASYNC_TASKS; i++) {
-                SenderTask *task = self->async_tasks + i;
+                SenderTask *task = &self->async_tasks[i];
                 if (task->func != NULL) {
                         if (trigger)
                                 task->func(self, buffer, size, task->data);
